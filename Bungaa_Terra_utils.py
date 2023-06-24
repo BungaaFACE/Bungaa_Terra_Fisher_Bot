@@ -7,10 +7,6 @@ import numpy as np
 import cv2
 from time import sleep
 
-class terraria_window_storage():
-    def __init__(self):
-        self.terraria_window = None
-tws = terraria_window_storage()
 
 def get_terraria_window():
     """
@@ -39,48 +35,48 @@ def get_terraria_window():
         print("Окно не найдено")
         exit()
 
-    print(win32gui.FindWindowEx(396026, None, None, None))
-    tws.terraria_window = terraria_window_list[0]
+    
+    return terraria_window_list[0]
         
 
-def get_window_region():
+def get_window_region(terraria_window):
     """
     Функция достает координаты и размеры окна
     """
-    x0, y0, x1, y1 = win32gui.GetWindowRect(tws.terraria_window)
+    x0, y0, x1, y1 = win32gui.GetWindowRect(terraria_window)
     width = x1 - x0
     height = y1 - y0
     return (x0, y0, width, height)
 
 
-def background_click(x, y):
+def background_click(terraria_window, x, y):
     """
     Имитирует нажатия в окне без использования основного курсора (даже в окне на фоне)
     """
-    print(tws.terraria_window)
+    print(terraria_window)
     print(x, y)
     
     lParam = win32api.MAKELONG(x, y)
-    win32gui.SendMessage(tws.terraria_window, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
+    win32gui.SendMessage(terraria_window, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
     sleep(0.7)
-    win32gui.SendMessage(tws.terraria_window, win32con.WM_LBUTTONUP, win32con.MK_LBUTTON, lParam)
+    win32gui.SendMessage(terraria_window, win32con.WM_LBUTTONUP, win32con.MK_LBUTTON, lParam)
     
-def get_cropped_screenshot(x, y, border_len):
-    screenshot = get_background_sreenshot()
+def get_cropped_screenshot(terraria_window, x, y, border_len):
+    screenshot = get_background_sreenshot(terraria_window)
     cropped_screenshot = screenshot[y-border_len:y+border_len, x-border_len:x+border_len]
     gray_cropped_screen = cv2.cvtColor(cropped_screenshot, cv2.COLOR_BGR2GRAY)
     return gray_cropped_screen
 
-def get_background_sreenshot():
+def get_background_sreenshot(terraria_window):
     """
     Функция делаем скриншот окна из фонового режима
     """
     
-    hwndDC = win32gui.GetWindowDC(tws.terraria_window)
+    hwndDC = win32gui.GetWindowDC(terraria_window)
     mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
     saveDC = mfcDC.CreateCompatibleDC()
     
-    window_region = get_window_region()
+    window_region = get_window_region(terraria_window)
     width, height = window_region[2], window_region[3]
 
     saveBitMap = win32ui.CreateBitmap()
@@ -88,7 +84,7 @@ def get_background_sreenshot():
     saveDC.SelectObject(saveBitMap)
     
     # Printwindow нужно для избежания черного скриншота
-    windll.user32.PrintWindow(tws.terraria_window, saveDC.GetSafeHdc(), 2)
+    windll.user32.PrintWindow(terraria_window, saveDC.GetSafeHdc(), 2)
     
     bmpstr = saveBitMap.GetBitmapBits(True)
     
@@ -99,19 +95,19 @@ def get_background_sreenshot():
     win32gui.DeleteObject(saveBitMap.GetHandle())
     saveDC.DeleteDC()
     mfcDC.DeleteDC()
-    win32gui.ReleaseDC(tws.terraria_window, hwndDC)
+    win32gui.ReleaseDC(terraria_window, hwndDC)
     
     return screenshot
 
 
-def get_window_pos_mouse(mouse_x, mouse_y):
+def get_window_pos_mouse(terraria_window, mouse_x, mouse_y):
     """
     Функция перерасчитывает 
     координаты экрана на координаты окна
     """
     
     # Координаты начальной точки окна (левый верхний угол)
-    win_x, win_y, _, _ = get_window_region()
+    win_x, win_y, _, _ = get_window_region(terraria_window)
     
     # Координаты курсора относительно окна
     win_mouse_x = mouse_x - win_x
